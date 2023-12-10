@@ -1,36 +1,56 @@
 package com.example.appdevalt
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import com.example.appdevalt.ui.home.HomeFragment
+import android.widget.Toast
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 
 class LogIn : AppCompatActivity() {
+    private lateinit var databaseHelper: DatabaseHelper
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_log_in)
 
+        databaseHelper = DatabaseHelper(this)
+
         val user: TextInputLayout = findViewById(R.id.user)
         val pass: TextInputLayout = findViewById(R.id.password)
         val btnLogIn: Button = findViewById(R.id.btnLogIn)
-        val tvUsername: TextView = findViewById(R.id.tv)
-        val tvPassword: TextView = findViewById(R.id.tvpassword)
 
         btnLogIn.setOnClickListener {
-            /*sample lang*/
-            val username: String = user.editText?.text.toString()
-            val password: String = pass.editText?.text.toString()
+            val logUsername: String = user.editText?.text.toString()
+            val logPassword: String = pass.editText?.text.toString()
+            
+            if(logUsername.trim()!="" && logPassword.trim()!="")
+                loginDatabase(logUsername, logPassword)
+            else
+                Toast.makeText(this, "Please answer all fields to log in.", Toast.LENGTH_LONG).show()
+        }
+    }
 
-            tvUsername.text = "Username: $username"
-            tvPassword.text = "Password: $password"
+    private fun loginDatabase(username: String, password: String) {
+        val user = databaseHelper.readUserByUsername(username)
 
-            val i = Intent(this, HomeFragment::class.java)
-            startActivity(i)
+        if (user != null && user.password == password) {
+            Toast.makeText(this, "Log In Successful", Toast.LENGTH_LONG).show()
+            val homepage = Intent(this, Homepage::class.java)
 
+            val sharedPreferences = getSharedPreferences("UserPrefs", Context.MODE_PRIVATE)
+            val editor = sharedPreferences.edit()
+            editor.putInt("USER_ID", user.id)
+            editor.putString("USER_NAME", user.name)
+            editor.apply()
+
+            startActivity(homepage)
+            finish()
+        } else {
+            Toast.makeText(this, "Log In Failed", Toast.LENGTH_LONG).show()
         }
     }
 
